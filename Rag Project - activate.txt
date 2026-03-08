@@ -1,0 +1,5 @@
+cd rag-project
+source venv/bin/activate
+
+
+Python3 rag.py
