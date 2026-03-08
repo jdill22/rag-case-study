@@ -11,7 +11,6 @@ load_dotenv()
 # Load all three PDFs
 files = [
     "data/Product Manager II, Content Studio, NotebookLM-Labs.pdf",
-    "data/CareerAI Auto Apply Agent (Human-in-the-loop).pdf",
     "data/Product Manager, Business AI.pdf",
 ]
 
