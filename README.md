@@ -27,13 +27,13 @@ LLMs have knowledge cutoff dates, no access to private data, and can hallucinate
 
 Tested three chunk sizes on the same query: "What skills are required for this role?"
 
-**chunk_size=200 (50 chunks)**
+**1. chunk_size=200 (50 chunks)**
 Result: Vague, incomplete, text cut off mid-sentence. Too small — loses context.
 
-**chunk_size=500 (18 chunks)**
+**2. chunk_size=500 (18 chunks)**
 Result: Clean, specific, complete. Sweet spot for this dataset.
 
-**chunk_size=1000 (9 chunks)**
+**3. chunk_size=1000 (9 chunks)**
 Result: Comprehensive but fewer chunks means less precision on targeted questions.
 
 **Decision:** 500 is my default starting point going forward.
