@@ -3,7 +3,6 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_anthropic import ChatAnthropic
-from langchain.chains import RetrievalQA
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -34,7 +33,7 @@ vectorstore = Chroma.from_documents(all_chunks, embeddings)
 llm = ChatAnthropic(model="claude-haiku-4-5-20251001", temperature=0.4)
 
 # Step 1: Retrieve chunks with scores
-query = "What skills are required for this role?"
+query = "What are the key responsibilities of this role?"
 
 docs_with_scores = vectorstore.similarity_search_with_score(query, k=4)
 
