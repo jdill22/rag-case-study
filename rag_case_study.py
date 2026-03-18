@@ -68,6 +68,43 @@ for i, (doc, score) in enumerate(docs_with_scores):
     print(f"Source: {doc.metadata.get('source', 'unknown')}")
     print(f"Content: {doc.page_content[:200]}...")
 
+# Combine BM25 and semantic results
+bm25_chunks = [chunk_texts[idx] for idx in top_bm25_indices]
+semantic_chunks = [doc.page_content for doc, _ in docs_with_scores]
+
+combined = bm25_chunks + semantic_chunks
+
+# Deduplicate while preserving order
+seen = set()
+deduplicated = []
+for chunk in combined:
+    if chunk not in seen:
+        seen.add(chunk)
+        deduplicated.append(chunk)
+
+print(f"\n--- Combined & Deduplicated ---")
+print(f"Total unique chunks: {len(deduplicated)}") 
+
+# Re-rank using cross-encoder
+from sentence_transformers import CrossEncoder
+
+reranker = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
+
+# Score each chunk against the query
+pairs = [[query, chunk] for chunk in deduplicated]
+scores = reranker.predict(pairs)
+
+# Sort by score — highest first
+reranked = [chunk for _, chunk in sorted(zip(scores, deduplicated), reverse=True)]
+
+# Take top 3
+top_chunks = reranked[:3]
+
+print(f"\n--- Re-ranked Top 3 Chunks ---")
+for i, chunk in enumerate(top_chunks):
+    print(f"\nChunk {i+1}:")
+    print(chunk[:200])
+
 # Build context and send to LLM
 context = "\n\n".join([doc.page_content for doc, _ in docs_with_scores])
 prompt = f"Context:\n{context}\n\nQuestion: {query}\nAnswer:"
