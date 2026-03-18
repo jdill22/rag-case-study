@@ -10,7 +10,6 @@
 # 5. Re-ranking — cross-encoder scores chunks against query
 # 6. Generation — top 3 chunks sent to Claude as context
 # ============================================================
-
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
