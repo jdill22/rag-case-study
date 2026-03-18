@@ -1,3 +1,16 @@
+# ============================================================
+# RAG Case Study — Advanced Hybrid Search Pipeline
+# Josh Dillingham · March 2026
+# ============================================================
+# This pipeline implements a production-grade RAG system:
+# 1. Ingestion — loads PDFs, chunks with overlap
+# 2. Semantic Search — HuggingFace embeddings + ChromaDB
+# 3. Lexical Search — BM25 keyword index (rank_bm25)
+# 4. Hybrid Combine — merges and deduplicates both result sets
+# 5. Re-ranking — cross-encoder scores chunks against query
+# 6. Generation — top 3 chunks sent to Claude as context
+# ============================================================
+
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
