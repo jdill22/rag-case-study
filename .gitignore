@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 .env
 chroma_db/
+PI-podcast-agent.json
+token.json
