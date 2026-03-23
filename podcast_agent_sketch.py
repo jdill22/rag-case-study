@@ -12,6 +12,10 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
+import anthropic
+
+from dotenv import load_dotenv
+load_dotenv()
 
 # Gmail scope — read only for now
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
@@ -44,7 +48,6 @@ def check_gmail():
     inquiries = []
     
     for msg in messages:
-        # Get full message details
         message = service.users().messages().get(
             userId='me',
             id=msg['id'],
@@ -57,20 +60,12 @@ def check_gmail():
         sender = next((h['value'] for h in headers if h['name'] == 'From'), 'Unknown')
         snippet = message.get('snippet', '')
         
-        # Filter for podcast guest inquiries only
-        keywords = ['guest', 'injured', 'inquiry', 'inquiries', 'feature', 'interview', 'appear']
-        is_inquiry = any(keyword.lower() in subject.lower() or 
-                         keyword.lower() in snippet.lower() 
-                         for keyword in keywords)
-
-        # Filter for podcast guest inquiries only
         keywords = ['guest', 'injured', 'inquiry', 'inquiries', 'feature', 'interview', 'appear']
         is_inquiry = any(keyword.lower() in subject.lower() or 
                          keyword.lower() in snippet.lower() 
                          for keyword in keywords)
         
-        # Exclude known non-inquiry senders
-        excluded_senders = ['buzzsprout', 'noreply', 'no-reply', 'support@', 'billing@']
+        excluded_senders = ['buzzsprout', 'noreply', 'no-reply', 'support@', 'billing@', 'podpage']
         is_excluded = any(excluded.lower() in sender.lower() for excluded in excluded_senders)
         
         if not is_inquiry or is_excluded:
@@ -90,8 +85,57 @@ def check_gmail():
     
     return inquiries
 
+def summarize_inquiry(inquiry):
+    client = anthropic.Anthropic()
+    
+    prompt = f"""You are PI, a podcast inbox manager for the Playing Injured podcast.
+    
+A potential guest inquiry has arrived. Summarize it clearly and concisely for the host Josh.
+
+From: {inquiry['sender']}
+Subject: {inquiry['subject']}
+Message preview: {inquiry['snippet']}
+
+Write a 2-3 sentence summary that tells Josh:
+1. Who is reaching out and why
+2. Whether they seem like a serious inquiry or a mass pitch
+3. What Josh should know before deciding yes or no
+
+Keep it direct and conversational."""
+
+    message = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=300,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    
+    return message.content[0].text
+
+# WhatsApp notification to Josh
+def notify_josh_whatsapp(inquiry, summary):
+    from twilio.rest import Client
+    
+    account_sid = os.getenv('TWILIO_ACCOUNT_SID')
+    auth_token = os.getenv('TWILIO_AUTH_TOKEN')
+    from_number = os.getenv('TWILIO_WHATSAPP_FROM')
+    to_number = os.getenv('MY_WHATSAPP_NUMBER')
+    
+    client = Client(account_sid, auth_token)
+    
+    message = client.messages.create(
+        body=f"🎙️ PI — New Guest Inquiry\n\nFrom: {inquiry['sender']}\nSubject: {inquiry['subject']}\n\n{summary}\n\nReply YES to accept or NO to decline.",
+        from_=from_number,
+        to=to_number
+    )
+    
+    print(f"WhatsApp sent! Message SID: {message.sid}")
+    return message.sid
+
 # Run it
 if __name__ == "__main__":
-    check_gmail()
-
-   
+    inquiries = check_gmail()
+    for inquiry in inquiries:
+        print(f"\n--- PI Summary ---")
+        summary = summarize_inquiry(inquiry)
+        print(summary)
+        notify_josh_whatsapp(inquiry, summary)
